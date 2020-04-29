@@ -24,8 +24,8 @@ def load_rules():
         if name == "":
             break
         condition = file.readline()
-        operation = file.readline()
-        rules.append(Rule(name,condition,operation))
+        conclusion = file.readline()
+        rules.append(Rule(name,condition,conclusion))
         file.readline()
     print("Rules loaded")
     return rules
@@ -62,7 +62,6 @@ def assign_variables(fact,indexes):
         if i == -1:
             raw_indexes.remove(i)
 
-    print(raw_indexes)
     lowest = min(raw_indexes)
     raw_indexes.remove(lowest)
     if len(raw_indexes):
@@ -95,28 +94,60 @@ def assign_variables(fact,indexes):
 
     return output
 
+def compare_variables(variables1,variables2):
+    if variables1["X"] == variables2["X"] and variables1["X"] != "":
+        return True
+    elif variables1["Y"] == variables2["Y"] and variables1["Y"] != "":
+        return True
+    elif variables1["Z"] == variables2["Z"] and variables1["Z"] != "":
+        return True
+    return False
+
+def combine_variables(variables1,variables2):
+    output = {}
+    for key,value in variables1.items():
+        if value != "":
+            output[key] = value
+
+    for key,value in variables2.items():
+        if value != "":
+            output[key] = value
+
+    return output
+
+def create_conclusion_string(conclusion,variables):
+    conclusion = conclusion.replace('?X',variables["X"])
+    conclusion = conclusion.replace('?Y',variables["Y"])
+    conclusion = conclusion.replace('?Z',variables["Z"])
+    return conclusion
+
+def execute_operation(facts,operation,conclusion):
+    if operation ==
+
 def resolve(facts,rule):
-    #print(rule.condition1_raw_text)
-    #print(rule.condition2_raw_text)
+
     for fact in facts:
         pattern = rule.condition1_raw_text
-        pattern_index = fact.find(pattern)
-        if pattern_index != -1:
-
-            output = assign_variables(fact,rule.condition1_variable_indexes)
-            print(output["X"])
-            print(output["Y"])
-            print(output["Z"])
-            """left_part = fact[1:pattern_index]
-            right_part = fact[pattern_index+len(pattern):-1]
-            print(left_part)
-            print(right_part)"""
-
+        if fact.find(pattern) != -1:
+            condition1_variables = assign_variables(fact,rule.condition1_variable_indexes)
+            for another_fact in facts:
+                pattern = rule.condition2_raw_text
+                if another_fact.find(pattern) != -1:
+                    condition2_variables = assign_variables(another_fact, rule.condition2_variable_indexes)
+                    if compare_variables(condition1_variables,condition2_variables):
+                        variables = combine_variables(condition1_variables,condition2_variables)
+                        conclusion = create_conclusion_string(rule.conclusion,variables)
+                        #print(fact)
+                        #print(another_fact)
+                        #print(conclusion)
+        #print("_____________________")
+    return 0,facts
 
 facts = load_facts()
 rules = load_rules()
+resolve(facts,rules[0])
 
-while True:
+"""while True:
     available_rules = len(rules)
     for rule in rules:
         was_used, facts = resolve(facts,rule)
@@ -127,4 +158,4 @@ while True:
         break
 
 for fact in facts:
-    print(fact)
+    print(fact)"""
