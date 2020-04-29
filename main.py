@@ -29,32 +29,92 @@ def load_rules():
         file.readline()
     print("Rules loaded")
     return rules
-
+"""
 def get_condition_string_pattern(condition):
-    half_index = condition.find(")")
-    condition1 = condition[4:half_index+1]
-    condition2 = condition[half_index+1:-1]
+    condition = condition.replace("?X",".+")
+    condition = condition.replace("?Y", ".+")
+    condition = condition.replace("?Z", ".+")
+    return condition
+"""
 
-    condition1 = condition1.replace("?X",".+")
-    condition1 = condition1.replace("?Y", ".+")
-    condition1 = condition1.replace("?Z", ".+")
-    condition2 = condition2.replace("?X", ".+")
-    condition2 = condition2.replace("?Y", ".+")
-    condition2 = condition2.replace("?Z", ".+")
-    return condition1,condition2
+def slice_string_to_next_space(string,start):
+    result = string[start:]
+    space_index = result.find(' ')
+    if space_index != -1:
+        result = result[:space_index]
+    other_index = result.find(')')
+    if other_index != -1:
+        result = result[:other_index]
 
+    return result
 
+def assign_variables(fact,indexes):
+    x = indexes["X"]
+    y = indexes["Y"]
+    z = indexes["Z"]
+
+    lowest = -1
+    middle = -1
+    highest = -1
+
+    raw_indexes = [x,y,z]
+    for i in raw_indexes:
+        if i == -1:
+            raw_indexes.remove(i)
+
+    print(raw_indexes)
+    lowest = min(raw_indexes)
+    raw_indexes.remove(lowest)
+    if len(raw_indexes):
+        middle = min(raw_indexes)
+        raw_indexes.remove(middle)
+        if len(raw_indexes):
+            highest = raw_indexes[0]
+
+    var_lowest = ""
+    var_middle = ""
+    var_highest = ""
+
+    var_lowest = slice_string_to_next_space(fact,lowest)
+    if middle != -1:
+        var_middle = slice_string_to_next_space(fact,middle - 2 + len(var_lowest))
+        if highest != -1:
+            var_highest = slice_string_to_next_space(fact,highest - 4 + len(var_lowest) + len(var_middle))
+
+    if indexes["X"] == lowest:
+        var_x = var_lowest
+
+    output = {}
+    for key,value in indexes.items():
+        if value == lowest:
+            output[key] = var_lowest
+        elif value == middle:
+            output[key] = var_middle
+        elif value == highest:
+            output[key] = var_highest
+
+    return output
 
 def resolve(facts,rule):
-    condition1,condition2 = get_condition_string_pattern(rule.get_condition())
+    #print(rule.condition1_raw_text)
+    #print(rule.condition2_raw_text)
     for fact in facts:
-        pattern = condition1
-        if re.match(pattern, fact):
-            print(fact)
+        pattern = rule.condition1_raw_text
+        pattern_index = fact.find(pattern)
+        if pattern_index != -1:
+
+            output = assign_variables(fact,rule.condition1_variable_indexes)
+            print(output["X"])
+            print(output["Y"])
+            print(output["Z"])
+            """left_part = fact[1:pattern_index]
+            right_part = fact[pattern_index+len(pattern):-1]
+            print(left_part)
+            print(right_part)"""
+
 
 facts = load_facts()
 rules = load_rules()
-
 
 while True:
     available_rules = len(rules)
