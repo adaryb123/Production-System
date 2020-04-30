@@ -1,5 +1,5 @@
 BRAT:
-AK ((?R je rodic ?X)(?R je rodic ?Y)(muz ?Y)(<> ?Y ?Z))
+AK ((?R je rodic ?X)(?R je rodic ?Y)(muz ?Y)(<> ?Y ?X))
 POTOM ((PRIDAJ ?Y je brat ?X)(SPRAVA Viem ze ?X ma brata, vola sa ?Y))
 
 DruhyRodic1:

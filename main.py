@@ -75,6 +75,15 @@ def create_conclusion_string(conclusion,variables):
 #def execute_operation(facts,operation,conclusion):
 #    if operation ==
 
+def check_special_condition(special,variables):
+    unique = []
+    for key,item in special.items():
+        value = variables[key]
+        if unique.count(value) > 0:
+            return False
+        unique.append(variables[key])
+    return True
+
 def add_variables(variables,new):
     for key, value in new.items():
         if value != "":
@@ -99,8 +108,10 @@ def find_matching_fact(facts,conditions,condition_index,variables,conclusions):
     pattern = conditions[condition_index].raw_text
 
     if pattern == "<> ":
-        print("special condition-skip")
-        find_matching_fact(facts,conditions,condition_index+1,variables,conclusions)
+        if check_special_condition(conditions[condition_index].variable_indexes,variables):
+            find_matching_fact(facts,conditions,condition_index+1,variables,conclusions)
+        else:
+            return
 
     for fact in facts:
         if fact.find(pattern) != -1:
