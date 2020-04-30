@@ -89,23 +89,29 @@ def add_variables(variables,new):
 
     return True, variables
 
-def find_matching_fact(facts,conditions,condition_index,variables,conclusion):
+def find_matching_fact(facts,conditions,condition_index,variables,conclusions):
     if condition_index >= len(conditions):
-        conclusion = create_conclusion_string(conclusion,variables)
-        print(conclusion)
+        for conclusion in conclusions:
+            result = create_conclusion_string(conclusion.fact,variables)
+            print(result)
         return
 
     pattern = conditions[condition_index].raw_text
+
+    if pattern == "<> ":
+        print("special condition-skip")
+        find_matching_fact(facts,conditions,condition_index+1,variables,conclusions)
+
     for fact in facts:
         if fact.find(pattern) != -1:
             current_variables = assign_variables(fact,conditions[condition_index].variable_indexes)
             match, temp_variables = add_variables(variables.copy(), current_variables)
             if match:
-                find_matching_fact(facts,conditions,condition_index+1,temp_variables,conclusion)
+                find_matching_fact(facts,conditions,condition_index+1,temp_variables,conclusions)
 
 def resolve(facts,rule):
     index = 0
-    find_matching_fact(facts,rule.conditions,index,{},rule.conclusion)
+    find_matching_fact(facts,rule.conditions,index,{},rule.conclusions)
     return 0,facts
 
 facts = load_facts()

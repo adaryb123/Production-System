@@ -4,6 +4,12 @@ class Condition:
         self.variable_indexes = variable_indexes
         self.raw_text = raw_text
 
+class Conclusion:
+    def __init__(self,whole_conclusion,operation,fact):
+        self.whole_conclusion_text = whole_conclusion
+        self.operation = operation
+        self.fact = fact
+
 
 def slice_string_to_next_space(string, start):
    result = string[start:]
@@ -20,7 +26,7 @@ class Rule:
     def __init__(self,name,condition,conclusion):
         self.name = name[:-2]
         self.split_conditions(condition)
-        self.extract_operation_and_conclusion(conclusion)
+        self.split_conclusions(conclusion)
 
     def __str__(self):
         return "Meno: " + self.name + " \nAK (" + self.condition1 + self.condition2 + self.special_condition + ")\nPOTOM ((" + self.operation + " " + self.conclusion[1:] + ")\n"
@@ -44,13 +50,22 @@ class Rule:
             variable_name = slice_string_to_next_space(condition,index)
             variables[variable_name] = index
             condition = condition.replace(variable_name,'',1)
-        raw_text = condition.replace(')','').replace('(','')
+        raw_text = condition.replace(')','').replace('(','').replace("  "," ")
         return variables,raw_text
 
-    def extract_operation_and_conclusion(self,conclusion):
-        conclusion = conclusion[8:-2]
+    def split_conclusions(self,full_conclusion):
+        conclusion = full_conclusion[7:-2]
+        self.conclusions = []
+        while conclusion != "":
+            end_index = conclusion.find(')')
+            current_conclusion = conclusion[:end_index + 1]
+            current_operation,current_fact = self.extract_operation_and_fact(conclusion)
+            self.conclusions.append(Conclusion(current_conclusion,current_operation,current_fact))
+            conclusion = conclusion[end_index+1:]
+
+    def extract_operation_and_fact(self,conclusion):
         first_space_index = conclusion.find(" ")
-        operation = conclusion[:first_space_index]
-        conclusion = "(" + conclusion[first_space_index+1:]
-        self.operation = operation
-        self.conclusion = conclusion
+        end_index = conclusion.find(")")
+        operation = conclusion[1:first_space_index]
+        fact = "(" + conclusion[first_space_index + 1 : end_index + 1]
+        return operation, fact
