@@ -1,5 +1,5 @@
 from Rule import Rule
-import re
+import copy
 
 
 
@@ -29,13 +29,6 @@ def load_rules():
         file.readline()
     print("Rules loaded")
     return rules
-"""
-def get_condition_string_pattern(condition):
-    condition = condition.replace("?X",".+")
-    condition = condition.replace("?Y", ".+")
-    condition = condition.replace("?Z", ".+")
-    return condition
-"""
 
 def slice_string_to_next_space(string,start):
     result = string[start:]
@@ -49,98 +42,70 @@ def slice_string_to_next_space(string,start):
     return result
 
 def assign_variables(fact,indexes):
-    x = indexes["X"]
-    y = indexes["Y"]
-    z = indexes["Z"]
+    temp_dict = {}
+    variable_names = {}
+    result = {}
 
-    lowest = -1
-    middle = -1
-    highest = -1
-
-    raw_indexes = [x,y,z]
-    for i in raw_indexes:
-        if i == -1:
-            raw_indexes.remove(i)
-
-    lowest = min(raw_indexes)
-    raw_indexes.remove(lowest)
-    if len(raw_indexes):
-        middle = min(raw_indexes)
-        raw_indexes.remove(middle)
-        if len(raw_indexes):
-            highest = raw_indexes[0]
-
-    var_lowest = ""
-    var_middle = ""
-    var_highest = ""
-
-    var_lowest = slice_string_to_next_space(fact,lowest)
-    if middle != -1:
-        var_middle = slice_string_to_next_space(fact,middle - 2 + len(var_lowest))
-        if highest != -1:
-            var_highest = slice_string_to_next_space(fact,highest - 4 + len(var_lowest) + len(var_middle))
-
-    if indexes["X"] == lowest:
-        var_x = var_lowest
-
-    output = {}
     for key,value in indexes.items():
-        if value == lowest:
-            output[key] = var_lowest
-        elif value == middle:
-            output[key] = var_middle
-        elif value == highest:
-            output[key] = var_highest
+        temp_dict[value] = ""
 
-    return output
+    bonus_lenght = 0
+    while True:
+        if len(temp_dict) == 0:
+            break
+        current = min(temp_dict.keys())
+        temp_dict.pop(current)
+        if current == -1:
+            print("ERROR: -1")
+        else:
+            variable_string = slice_string_to_next_space(fact,current + bonus_lenght)
+            variable_names[current] = variable_string
+            bonus_lenght += len(variable_string)
 
-def compare_variables(variables1,variables2):
-    if variables1["X"] == variables2["X"] and variables1["X"] != "":
-        return True
-    elif variables1["Y"] == variables2["Y"] and variables1["Y"] != "":
-        return True
-    elif variables1["Z"] == variables2["Z"] and variables1["Z"] != "":
-        return True
-    return False
+    for key,value in indexes.items():
+        result[key] = variable_names[value]
 
-def combine_variables(variables1,variables2):
-    output = {}
-    for key,value in variables1.items():
-        if value != "":
-            output[key] = value
-
-    for key,value in variables2.items():
-        if value != "":
-            output[key] = value
-
-    return output
+    return result
 
 def create_conclusion_string(conclusion,variables):
-    conclusion = conclusion.replace('?X',variables["X"])
-    conclusion = conclusion.replace('?Y',variables["Y"])
-    conclusion = conclusion.replace('?Z',variables["Z"])
+    for key,value in variables.items():
+        conclusion = conclusion.replace(key,value)
     return conclusion
 
-def execute_operation(facts,operation,conclusion):
-    if operation ==
+#def execute_operation(facts,operation,conclusion):
+#    if operation ==
+
+def add_variables(variables,new):
+    for key, value in new.items():
+        if value != "":
+            if variables.get(key) == value or variables.get(key) ==  None or variables[key] == "":
+                continue
+            else:
+                return False,variables
+
+    for key, value in new.items():
+        if value != "":
+            variables[key] = value
+
+    return True, variables
+
+def find_matching_fact(facts,conditions,condition_index,variables,conclusion):
+    if condition_index >= len(conditions):
+        conclusion = create_conclusion_string(conclusion,variables)
+        print(conclusion)
+        return
+
+    pattern = conditions[condition_index].raw_text
+    for fact in facts:
+        if fact.find(pattern) != -1:
+            current_variables = assign_variables(fact,conditions[condition_index].variable_indexes)
+            match, temp_variables = add_variables(variables.copy(), current_variables)
+            if match:
+                find_matching_fact(facts,conditions,condition_index+1,temp_variables,conclusion)
 
 def resolve(facts,rule):
-
-    for fact in facts:
-        pattern = rule.condition1_raw_text
-        if fact.find(pattern) != -1:
-            condition1_variables = assign_variables(fact,rule.condition1_variable_indexes)
-            for another_fact in facts:
-                pattern = rule.condition2_raw_text
-                if another_fact.find(pattern) != -1:
-                    condition2_variables = assign_variables(another_fact, rule.condition2_variable_indexes)
-                    if compare_variables(condition1_variables,condition2_variables):
-                        variables = combine_variables(condition1_variables,condition2_variables)
-                        conclusion = create_conclusion_string(rule.conclusion,variables)
-                        #print(fact)
-                        #print(another_fact)
-                        #print(conclusion)
-        #print("_____________________")
+    index = 0
+    find_matching_fact(facts,rule.conditions,index,{},rule.conclusion)
     return 0,facts
 
 facts = load_facts()

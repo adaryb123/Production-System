@@ -1,3 +1,7 @@
+BRAT:
+AK ((?R je rodic ?X)(?R je rodic ?Y)(muz ?Y))
+POTOM ((PRIDAJ ?Y je brat ?X))
+
 DruhyRodic1:
 AK ((?X je rodic ?Y)(manzelia ?X ?Z))
 POTOM ((pridaj ?Z je rodic ?Y))

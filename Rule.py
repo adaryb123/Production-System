@@ -1,5 +1,22 @@
-class Rule:
+class Condition:
+    def __init__(self,whole_condition,variable_indexes,raw_text):
+        self.whole_condition_text = whole_condition
+        self.variable_indexes = variable_indexes
+        self.raw_text = raw_text
 
+
+def slice_string_to_next_space(string, start):
+   result = string[start:]
+   space_index = result.find(' ')
+   if space_index != -1:
+        result = result[:space_index]
+   other_index = result.find(')')
+   if other_index != -1:
+        result = result[:other_index]
+
+   return result
+
+class Rule:
     def __init__(self,name,condition,conclusion):
         self.name = name[:-2]
         self.split_conditions(condition)
@@ -9,32 +26,26 @@ class Rule:
         return "Meno: " + self.name + " \nAK (" + self.condition1 + self.condition2 + self.special_condition + ")\nPOTOM ((" + self.operation + " " + self.conclusion[1:] + ")\n"
 
     def split_conditions(self,full_condition):
-        full_condition = full_condition[4:-2]
-        first_end_index = full_condition.find(')')
-        condition1 = full_condition[:first_end_index+1]
-        full_condition = full_condition[first_end_index+1:]
-        second_end_index = full_condition.find(')')
-        condition2 = full_condition[:second_end_index+1]
-        special_condition = full_condition[second_end_index+1:]
-
-        self.condition1 = condition1
-        self.condition1_variable_indexes = self.extract_variable_indexes(condition1)
-        self.condition1_raw_text = self.extract_raw_condition_text(condition1)
-        self.condition2 = condition2
-        self.condition2_variable_indexes = self.extract_variable_indexes(condition2)
-        self.condition2_raw_text = self.extract_raw_condition_text(condition2)
-        self.special_condition = special_condition
+        condition = full_condition[4:-2]
+        self.conditions = []
+        while condition != "":
+            end_index = condition.find(')')
+            current_condition = condition[:end_index+1]
+            current_variable_indexes,current_raw_text = self.extract_variable_indexes(current_condition)
+            self.conditions.append(Condition(current_condition,current_variable_indexes,current_raw_text))
+            condition = condition[end_index+1:]
 
     def extract_variable_indexes(self,condition):
-        x = condition.find('?X')
-        y = condition.find('?Y')
-        z = condition.find('?Z')
-        return {"X":x,"Y":y,"Z":z}
-
-
-    def extract_raw_condition_text(self,condition):
-        condition = condition.replace('?X','').replace('?Y','').replace('?Z','').replace('(','').replace(')','').replace('  ',' ')
-        return condition
+        variables = {}
+        while True:
+            index = condition.find('?')
+            if index == -1:
+                break
+            variable_name = slice_string_to_next_space(condition,index)
+            variables[variable_name] = index
+            condition = condition.replace(variable_name,'',1)
+        raw_text = condition.replace(')','').replace('(','')
+        return variables,raw_text
 
     def extract_operation_and_conclusion(self,conclusion):
         conclusion = conclusion[8:-2]
