@@ -1,7 +1,7 @@
 from Rule import Rule
-import copy
 
-
+to_remove = []
+to_add = []
 
 def load_facts():
     print("loading facts from facts.txt")
@@ -60,20 +60,29 @@ def assign_variables(fact,indexes):
         else:
             variable_string = slice_string_to_next_space(fact,current + bonus_lenght)
             variable_names[current] = variable_string
-            bonus_lenght += len(variable_string)
+            bonus_lenght += len(variable_string) - 1
 
     for key,value in indexes.items():
         result[key] = variable_names[value]
 
     return result
 
-def create_conclusion_string(conclusion,variables):
+def insert_variables_to_string(string,variables):
     for key,value in variables.items():
-        conclusion = conclusion.replace(key,value)
-    return conclusion
+        string = string.replace(key,value)
+    return string
 
-#def execute_operation(facts,operation,conclusion):
-#    if operation ==
+def execute_operation(string,operation):
+    if operation.upper() == "PRIDAJ":
+        to_add.append(string)
+    elif operation.upper() == "VYMAZ":
+        to_remove.append(string)
+    elif operation.upper() == "SPRAVA":
+        print(string[1:-1])
+    elif operation.upper() == "OTAZKA":
+        print("Otazka")
+    else:
+        print("ERROR,unknown operation: " + operation)
 
 def check_special_condition(special,variables):
     unique = []
@@ -98,23 +107,34 @@ def add_variables(variables,new):
 
     return True, variables
 
+def find_pattern_in_string(pattern,string):
+    while pattern != "":
+        pattern_chunk = slice_string_to_next_space(pattern,0)
+        string_chunk = slice_string_to_next_space(string,0)
+        if pattern_chunk == string_chunk or pattern_chunk.find("_") != -1:
+            pattern = pattern[len(pattern_chunk)+1:]
+            string = string[len(string_chunk)+1:]
+        else:
+            return False
+    return True
+
 def find_matching_fact(facts,conditions,condition_index,variables,conclusions):
     if condition_index >= len(conditions):
         for conclusion in conclusions:
-            result = create_conclusion_string(conclusion.fact,variables)
-            print(result)
+            conclusion_with_variables = insert_variables_to_string(conclusion.fact,variables)
+            execute_operation(facts,conclusion_with_variables,conclusion.operation)
         return
 
     pattern = conditions[condition_index].raw_text
 
-    if pattern == "<> ":
+    if pattern == "(<> _ _)":
         if check_special_condition(conditions[condition_index].variable_indexes,variables):
             find_matching_fact(facts,conditions,condition_index+1,variables,conclusions)
         else:
             return
 
     for fact in facts:
-        if fact.find(pattern) != -1:
+        if find_pattern_in_string(pattern,fact):
             current_variables = assign_variables(fact,conditions[condition_index].variable_indexes)
             match, temp_variables = add_variables(variables.copy(), current_variables)
             if match:
@@ -123,21 +143,20 @@ def find_matching_fact(facts,conditions,condition_index,variables,conclusions):
 def resolve(facts,rule):
     index = 0
     find_matching_fact(facts,rule.conditions,index,{},rule.conclusions)
+    for new_fact in to_add:
+        if facts.count(new_fact) == 0:
+            facts.append(new_fact)
+    for old_fact in to_remove:
+        facts.remove(old_fact)
+    to_add.clear()
+    to_remove.clear()
     return 0,facts
 
 facts = load_facts()
 rules = load_rules()
-resolve(facts,rules[0])
-
-"""while True:
-    available_rules = len(rules)
-    for rule in rules:
-        was_used, facts = resolve(facts,rule)
-        if was_used == 0:
-            available_rules -= 1
-
-    if available_rules == 0:
-        break
-
-for fact in facts:
-    print(fact)"""
+for rule in rules:
+    print(rule)
+    resolve(facts,rule)
+    for fact in facts:
+        print(fact)
+    print("_______")

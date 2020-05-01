@@ -27,9 +27,10 @@ class Rule:
         self.name = name[:-2]
         self.split_conditions(condition)
         self.split_conclusions(conclusion)
+        self.full_rule_text = "Meno: " + self.name + "\n"  + condition + conclusion
 
     def __str__(self):
-        return "Meno: " + self.name + " \nAK (" + self.condition1 + self.condition2 + self.special_condition + ")\nPOTOM ((" + self.operation + " " + self.conclusion[1:] + ")\n"
+        return self.full_rule_text
 
     def split_conditions(self,full_condition):
         condition = full_condition[4:-2]
@@ -49,9 +50,9 @@ class Rule:
                 break
             variable_name = slice_string_to_next_space(condition,index)
             variables[variable_name] = index
-            condition = condition.replace(variable_name,'',1)
-        raw_text = condition.replace(')','').replace('(','').replace("  "," ")
-        return variables,raw_text
+            condition = condition.replace(variable_name,'_',1)
+        #raw_text = condition.replace(')','').replace('(','').replace("  "," ")
+        return variables,condition
 
     def split_conclusions(self,full_conclusion):
         conclusion = full_conclusion[7:-2]
