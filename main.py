@@ -30,7 +30,7 @@ def load_rules():
     print("Rules loaded")
     return rules
 
-def slice_string_to_next_space(string,start):
+def slice_string_to_next_space(string, start):
     result = string[start:]
     space_index = result.find(' ')
     if space_index != -1:
@@ -41,38 +41,13 @@ def slice_string_to_next_space(string,start):
 
     return result
 
-def assign_variables(fact,indexes):
-    temp_dict = {}
-    variable_names = {}
-    result = {}
 
-    for key,value in indexes.items():
-        temp_dict[value] = ""
-
-    bonus_lenght = 0
-    while True:
-        if len(temp_dict) == 0:
-            break
-        current = min(temp_dict.keys())
-        temp_dict.pop(current)
-        if current == -1:
-            print("ERROR: -1")
-        else:
-            variable_string = slice_string_to_next_space(fact,current + bonus_lenght)
-            variable_names[current] = variable_string
-            bonus_lenght += len(variable_string) - 1
-
-    for key,value in indexes.items():
-        result[key] = variable_names[value]
-
-    return result
-
-def insert_variables_to_string(string,variables):
-    for key,value in variables.items():
-        string = string.replace(key,value)
+def insert_variables_to_string(string, variables):
+    for key, value in variables.items():
+        string = string.replace(key, value)
     return string
 
-def execute_operation(string,operation):
+def execute_operation(string, operation):
     if operation.upper() == "PRIDAJ":
         to_add.append(string)
     elif operation.upper() == "VYMAZ":
@@ -84,16 +59,24 @@ def execute_operation(string,operation):
     else:
         print("ERROR,unknown operation: " + operation)
 
-def check_special_condition(special,variables):
-    unique = []
-    for key,item in special.items():
+def check_special_condition(pattern, variables):
+    must_be_unique = []
+    pattern = pattern[1:-1]
+    while pattern != "":
+        word = slice_string_to_next_space(pattern,0)
+        if word[0] == "?":
+            must_be_unique.append(word)
+        pattern = pattern[len(word)+1:]
+
+    are_unique = []
+    for key in must_be_unique:
         value = variables[key]
-        if unique.count(value) > 0:
+        if are_unique.count(value) > 0:
             return False
-        unique.append(variables[key])
+        are_unique.append(variables[key])
     return True
 
-def add_variables(variables,new):
+def add_variables(variables, new):
     for key, value in new.items():
         if value != "":
             if variables.get(key) == value or variables.get(key) ==  None or variables[key] == "":
@@ -107,38 +90,45 @@ def add_variables(variables,new):
 
     return True, variables
 
-def find_pattern_in_string(pattern,string):
+def find_pattern_with_variables(pattern, fact):
+    variables = {}
+    pattern = pattern[1:-1]
+    fact = fact[1:-1]
     while pattern != "":
-        pattern_chunk = slice_string_to_next_space(pattern,0)
-        string_chunk = slice_string_to_next_space(string,0)
-        if pattern_chunk == string_chunk or pattern_chunk.find("_") != -1:
-            pattern = pattern[len(pattern_chunk)+1:]
-            string = string[len(string_chunk)+1:]
+        pattern_word = slice_string_to_next_space(pattern, 0)
+        fact_word = slice_string_to_next_space(fact, 0)
+        if pattern_word == fact_word:
+            pattern = pattern[len(pattern_word) + 1:]
+            fact = fact[len(fact_word) + 1:]
+        elif pattern_word.find("?") != -1:
+            pattern = pattern[len(pattern_word) + 1:]
+            fact = fact[len(fact_word) + 1:]
+            variables[pattern_word] = fact_word
         else:
-            return False
-    return True
+            return False, {}
+    return True, variables
 
-def find_matching_fact(facts,conditions,condition_index,variables,conclusions):
+def find_matching_fact(facts, conditions, condition_index, variables, conclusions):
     if condition_index >= len(conditions):
         for conclusion in conclusions:
             conclusion_with_variables = insert_variables_to_string(conclusion.fact,variables)
-            execute_operation(facts,conclusion_with_variables,conclusion.operation)
+            execute_operation(conclusion_with_variables,conclusion.operation)
         return
 
-    pattern = conditions[condition_index].raw_text
+    pattern = conditions[condition_index]
 
-    if pattern == "(<> _ _)":
-        if check_special_condition(conditions[condition_index].variable_indexes,variables):
-            find_matching_fact(facts,conditions,condition_index+1,variables,conclusions)
+    if pattern.find("<>") != -1:
+        if check_special_condition(pattern,variables):
+            find_matching_fact(facts, conditions, condition_index+1, variables, conclusions)
         else:
             return
 
     for fact in facts:
-        if find_pattern_in_string(pattern,fact):
-            current_variables = assign_variables(fact,conditions[condition_index].variable_indexes)
-            match, temp_variables = add_variables(variables.copy(), current_variables)
-            if match:
-                find_matching_fact(facts,conditions,condition_index+1,temp_variables,conclusions)
+        pattern_found, current_variables = find_pattern_with_variables(pattern, fact)
+        if pattern_found:
+            variables_match, all_variables = add_variables(variables.copy(), current_variables)
+            if variables_match:
+                find_matching_fact(facts, conditions, condition_index+1, all_variables, conclusions)
 
 def resolve(facts,rule):
     index = 0
