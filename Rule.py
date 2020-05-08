@@ -7,12 +7,21 @@ class Conclusion:
 class Rule:
     def __init__(self,name,condition,conclusion):
         self.name = name[:-2]
+        self.full_condition_text = condition
+        self.full_conclusion_text = conclusion
         self.conditions = self.split_conditions(condition)
         self.conclusions = self.split_conclusions(conclusion)
         self.full_rule_text = "Meno: " + self.name + "\n"  + condition + conclusion
+        self.output_string = self.make_output_string()
 
     def __str__(self):
         return self.full_rule_text
+
+    def make_output_string(self):
+        result = self.name
+        for c in self.conclusions:
+            result += ', ' + c.whole_conclusion_text[1:-1]
+        return result
 
     def split_conditions(self,full_condition):
         condition = full_condition[4:-2]
