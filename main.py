@@ -150,12 +150,17 @@ def find_matching_fact(facts,rule,condition_index, variables):      # find match
 
 
 def one_step(facts,rules):          #execute first valid result from queue, and fill the result queue if its empty
-    if len(output_results) == 0:
-        for rule in rules:
-            find_matching_fact(facts,rule,0,{})
+    invalid_results_num = 0
+    new_results_num = 0
     while True:
         if len(output_results) == 0:
-            return True,facts       # no more results are found - program ends
+            if new_results_num == invalid_results_num and new_results_num != 0:
+                return True,facts           #all of the facts that we added last were invalid, program ends
+
+            for rule in rules:
+                find_matching_fact(facts, rule, 0, {})
+            new_results_num = len(output_results)
+            invalid_results_num = 0
         else:
             result = output_results.pop(0)
             invalid_result = False
@@ -163,6 +168,7 @@ def one_step(facts,rules):          #execute first valid result from queue, and 
                 execution_possible, facts = execute_operation(conclusion.fact, conclusion.operation, facts)
                 if execution_possible == False:
                     invalid_result = True
+                    invalid_results_num += 1
                     break
             if invalid_result == False:
                 print(result.output_string)
